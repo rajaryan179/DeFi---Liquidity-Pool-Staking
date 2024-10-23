@@ -1,0 +1,56 @@
+use solana_program::{
+    account_info::AccountInfo, 
+    entrypoint, 
+    entrypoint::ProgramResult, 
+    program_error::ProgramError, 
+    pubkey::Pubkey,
+    msg
+};
+
+#[derive(Debug)]
+pub enum StakingError {
+    InsufficientFunds,
+}
+
+pub struct LiquidityPool {
+    pub total_liquidity: u64,
+    pub user_stake: u64,
+}
+
+impl LiquidityPool {
+    pub fn new() -> Self {
+        LiquidityPool {
+            total_liquidity: 0,
+            user_stake: 0,
+        }
+    }
+
+    pub fn stake(&mut self, amount: u64) -> ProgramResult {
+        if amount <= 0 {
+            return Err(ProgramError::Custom(StakingError::InsufficientFunds as u32));
+        }
+        self.user_stake += amount;
+        self.total_liquidity += amount;
+        Ok(())
+    }
+
+    pub fn withdraw(&mut self, amount: u64) -> ProgramResult {
+        if self.user_stake < amount {
+            return Err(ProgramError::Custom(StakingError::InsufficientFunds as u32));
+        }
+        self.user_stake -= amount;
+        self.total_liquidity -= amount;
+        Ok(())
+    }
+}
+
+entrypoint!(process_instruction);
+pub fn process_instruction(
+    _program_id: &Pubkey,
+    accounts: &[AccountInfo],
+    _instruction_data: &[u8],
+) -> ProgramResult {
+    let account = &accounts[0];
+    msg!("Staking contract initialized");
+    Ok(())
+}
